@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy_tweening = "0.9"
+bevy_rapier3d = { version = "*", features = [ "simd-stable", "debug-render-3d" ] }
 
 [workspace]
 resolver = "2" # Important! wgpu/Bevy needs this!

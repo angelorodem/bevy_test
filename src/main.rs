@@ -1,33 +1,58 @@
-use bevy::{prelude::*, transform::commands, ecs::query};
+mod asset_loader;
+mod camera;
+mod movable;
+mod player;
 
-fn hello_world() {
-    println!("hello world!");
+use std::time::Duration;
+
+use asset_loader::AssetLoaderPlugin;
+use bevy::{
+    core_pipeline::experimental::taa::TemporalAntiAliasPlugin,
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+};
+
+//https://github.com/djeedai/bevy_tweening
+use bevy_tweening::*;
+use camera::CameraPlugin;
+use movable::MovablePlugin;
+use player::PlayerPlugin;
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum GameState {
+    #[default]
+    Playing,
+    GameOver,
 }
-
-#[derive(Component)]
-struct Person;
-
-#[derive(Component)]
-struct Name(String);
-
-fn add_people(mut commands: Commands) {
-    commands.spawn((Person, Name("Jhon".to_string())));
-    commands.spawn((Person, Name("aaa".to_string())));
-    commands.spawn((Person, Name("Jhoeeen".to_string())));
-}
-
-fn greet_people(query: Query<&Name, With<Person>>) {
-    for name in &query {
-        println!("Hello {}!", name.0);
-    }
-}
-
-//https://bevyengine.org/learn/book/getting-started/plugins/
 
 fn main() {
     App::new()
-    .add_plugins(DefaultPlugins)
-    .add_systems(Startup, add_people)
-    .add_systems(Update, (hello_world, greet_people))
-    .run();
+        .insert_resource(Msaa::Off)
+        .insert_resource(ClearColor(Color::rgb(0.1, 0.0, 0.15)))
+        .insert_resource(AmbientLight {
+            color: Color::default(),
+            brightness: 0.75,
+        })
+        .add_plugins(DefaultPlugins)
+        .add_plugins(TweeningPlugin)
+        // Diagnostics
+        .add_plugins((
+            // Adds a system that prints diagnostics to the console
+            LogDiagnosticsPlugin {
+                wait_duration: Duration::from_secs(10),
+                ..Default::default()
+            },
+            FrameTimeDiagnosticsPlugin,
+            // Any plugin can register diagnostics. Uncomment this to add an entity count diagnostics:
+            bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
+            // Uncomment this to add system info diagnostics:
+            // bevy::diagnostic::SystemInformationDiagnosticsPlugin::default(),
+        ))
+        .add_plugins(TemporalAntiAliasPlugin)
+        // User Plugins
+        .add_plugins(AssetLoaderPlugin)
+        .add_plugins(CameraPlugin)
+        .add_plugins(PlayerPlugin)
+        .add_plugins(MovablePlugin)
+        .run();
 }
