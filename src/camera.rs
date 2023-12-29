@@ -26,12 +26,12 @@ impl Plugin for CameraPlugin {
 fn spawn_camera(mut commands: Commands) {
     commands
         .spawn(Camera3dBundle {
-            camera: Camera {
-                hdr: true,
-                ..Default::default()
-            },
+            // camera: Camera {
+            //     hdr: true,
+            //     ..Default::default()
+            // },
             transform: Transform::from_xyz(CAMERA_DISTANCE, CAMERA_DISTANCE, CAMERA_DISTANCE),
-            // tonemapping: Tonemapping::TonyMcMapface,
+            tonemapping: Tonemapping::TonyMcMapface,
             ..Default::default()
         })
         .insert(BloomSettings::NATURAL)

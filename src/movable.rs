@@ -59,12 +59,11 @@ fn animate_movables(
     for (target, movable, movable_animation) in targets.iter() {
         let mut animator = animation_players.get_mut(target.0).unwrap();
         if movable.speed == 0.0 && movable.acceleration == 0.0 {
-            if !animator.is_playing_clip(&movable_animation.idle_animations[1]) {
-                println!("Idle");
+            if !animator.is_playing_clip(&movable_animation.idle_animations[0]) {
                 // hack to fix feet position
                 animator
                     .start_with_transition(
-                        movable_animation.idle_animations[1].clone_weak(),
+                        movable_animation.idle_animations[0].clone_weak(),
                         Duration::from_millis(200),
                     )
                     .repeat();

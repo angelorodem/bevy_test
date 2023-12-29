@@ -1,17 +1,12 @@
 use std::time::Duration;
 
 use crate::asset_loader::PlayerSceneAssets;
+use crate::character::{HealthComponent, NameComponent};
 use crate::movable::{AnimatedCharacterMovable, Movable};
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct PlayerTag;
-
-#[derive(Component)]
-pub struct NameComponent(String);
-
-#[derive(Component)]
-pub struct HealthComponent(f32);
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -33,7 +28,7 @@ impl Plugin for PlayerPlugin {
 
 fn spawn_player(
     mut commands: Commands,
-    asset_server: Res<PlayerSceneAssets>,
+    asset_server: ResMut<PlayerSceneAssets>,
     mut meshes: ResMut<Assets<Mesh>>,                // example plane
     mut materials: ResMut<Assets<StandardMaterial>>, // example plane
 ) {
@@ -55,28 +50,28 @@ fn spawn_player(
         ..default()
     }));
 
-    // commands
-    //     .spawn(PbrBundle {
-    //         mesh: mesh.clone(),
-    //         material: materials.add(StandardMaterial {
-    //             emissive: Color::rgb_linear(0.2, 0.2, 10.0),
-    //             ..default()
-    //         }),
-    //         transform: Transform::from_xyz(1.0, 4.0, 0.0).with_scale(Vec3::splat(0.8)),
-    //         ..default()
-    //     })
-    //     .with_children(|children| {
-    //         children.spawn(PointLightBundle {
-    //             point_light: PointLight {
-    //                 intensity: 15000.0,
-    //                 radius: 0.8,
-    //                 shadows_enabled: true,
-    //                 color: Color::rgb(0.2, 0.2, 1.0),
-    //                 ..default()
-    //             },
-    //             ..default()
-    //         });
-    //     });
+    commands
+        .spawn(PbrBundle {
+            mesh: mesh.clone(),
+            material: materials.add(StandardMaterial {
+                emissive: Color::rgb_linear(0.2, 0.2, 10.0),
+                ..default()
+            }),
+            transform: Transform::from_xyz(1.0, 4.0, 0.0).with_scale(Vec3::splat(0.8)),
+            ..default()
+        })
+        .with_children(|children| {
+            children.spawn(PointLightBundle {
+                point_light: PointLight {
+                    intensity: 15000.0,
+                    radius: 0.8,
+                    shadows_enabled: true,
+                    color: Color::rgb(0.2, 0.2, 1.0),
+                    ..default()
+                },
+                ..default()
+            });
+        });
 
     commands.spawn(PlayerBundle {
         model: SceneBundle {

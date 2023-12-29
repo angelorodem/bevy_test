@@ -1,5 +1,7 @@
 mod asset_loader;
 mod camera;
+mod character;
+mod enemy;
 mod movable;
 mod player;
 
@@ -15,6 +17,7 @@ use bevy::{
 //https://github.com/djeedai/bevy_tweening
 use bevy_tweening::*;
 use camera::CameraPlugin;
+use enemy::EnemyPlugin;
 use movable::MovablePlugin;
 use player::PlayerPlugin;
 
@@ -53,6 +56,7 @@ fn main() {
         .add_plugins(AssetLoaderPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(PlayerPlugin)
+        .add_plugins(EnemyPlugin)
         .add_plugins(MovablePlugin)
         .run();
 }
