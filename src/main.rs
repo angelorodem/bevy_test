@@ -13,6 +13,7 @@ use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     prelude::*,
 };
+use bevy_editor_pls::prelude::*;
 
 //https://github.com/djeedai/bevy_tweening
 use bevy_tweening::*;
@@ -37,6 +38,7 @@ fn main() {
             brightness: 0.75,
         })
         .add_plugins(DefaultPlugins)
+        .add_plugins(EditorPlugin::default())
         .add_plugins(TweeningPlugin)
         // Diagnostics
         .add_plugins((
