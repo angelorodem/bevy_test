@@ -1,8 +1,11 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
+use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
-use crate::asset_loader::AnimationEntityLink;
+use crate::{
+    asset_loader::AnimationEntityLink, enemy::EnemyTag, player::PlayerTag, states::GameState,
+};
 
 #[derive(Component, Default)]
 pub struct Movable {
@@ -23,13 +26,29 @@ pub struct AnimatedCharacterMovable {
 pub struct MovablePlugin;
 impl Plugin for MovablePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_movables)
-            .add_systems(Update, animate_movables);
+        app.add_systems(
+            Update,
+            (move_movables_player, move_movables_enemy, animate_movables)
+                .run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
-fn move_movables(mut movables: Query<(&mut Transform, &mut Movable)>, time: Res<Time>) {
-    for (mut movable_tranform, mut movable_data) in movables.iter_mut() {
+fn move_movables_player(
+    mut movables: Query<
+        (
+            &mut Transform,
+            &mut KinematicCharacterController,
+            &KinematicCharacterControllerOutput,
+            &mut Movable,
+        ),
+        With<PlayerTag>,
+    >,
+    time: Res<Time>,
+) {
+    for (movable_tranform, mut controller, controller_output, mut movable_data) in
+        movables.iter_mut()
+    {
         if movable_data.fast {
             movable_data.speed = (movable_data.speed
                 + (movable_data.acceleration * time.delta_seconds()))
@@ -45,8 +64,45 @@ fn move_movables(mut movables: Query<(&mut Transform, &mut Movable)>, time: Res<
             movable_data.acceleration = 0.0;
         } else {
             let forward = -movable_tranform.forward();
+            let mut move_vector = forward * movable_data.speed * time.delta_seconds();
+
+            //movable_tranform.translation += move_vector;
+            if !controller_output.grounded {
+                move_vector += Vec3::new(0.0, -10.0, 0.0) * time.delta_seconds();
+            }
+            controller.translation = Some(move_vector);
+        }
+    }
+}
+
+fn move_movables_enemy(
+    mut movables: Query<(&mut Transform, &mut Movable), With<EnemyTag>>,
+    time: Res<Time>,
+) {
+    for (mut movable_tranform, mut movable_data) in movables.iter_mut() {
+        if movable_data.fast {
+            movable_data.speed = (movable_data.speed
+                + (movable_data.acceleration * time.delta_seconds()))
+            .clamp(-movable_data.max_speed, movable_data.max_speed);
+        } else {
+            movable_data.speed = (movable_data.speed
+                + (movable_data.acceleration * time.delta_seconds()))
+            .clamp(-movable_data.max_speed / 2.0, movable_data.max_speed / 2.0);
+        }
+
+        println!(
+            "Enemy speed: {}, Enemy Acceleration: {}",
+            movable_data.speed, movable_data.acceleration
+        );
+        if movable_data.speed < 1.0 && movable_data.acceleration.abs() < 9.0 {
+            movable_data.speed = 0.0;
+            movable_data.acceleration = 0.0;
+            println!("Enemy stopped")
+        } else {
+            let forward = -movable_tranform.forward();
             let move_vector = forward * movable_data.speed * time.delta_seconds();
 
+            println!("Move vector: {:?}", move_vector);
             movable_tranform.translation += move_vector;
         }
     }

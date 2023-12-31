@@ -8,7 +8,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::player::PlayerTag;
+use crate::{player::PlayerTag, states::GameState};
 
 const CAMERA_DISTANCE: f32 = 20.0;
 const CAMERA_HEIGHT: f32 = 5.0;
@@ -18,8 +18,8 @@ pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_camera)
-            .add_systems(Update, player_camera);
+        app.add_systems(OnEnter(GameState::Playing), spawn_camera)
+            .add_systems(Update, player_camera.run_if(in_state(GameState::Playing)));
     }
 }
 

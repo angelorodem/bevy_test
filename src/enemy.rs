@@ -46,9 +46,9 @@ fn spawn_enemy(mut commands: Commands, asset_server: ResMut<SkeletonSceneAssets>
         model: SceneBundle {
             scene: asset_server.skeleton.clone(),
             transform: Transform::from_translation(Vec3 {
-                x: -3.,
+                x: 4.,
                 y: 0.0,
-                z: -3.,
+                z: 4.,
             }),
             ..Default::default()
         },
@@ -56,7 +56,7 @@ fn spawn_enemy(mut commands: Commands, asset_server: ResMut<SkeletonSceneAssets>
         health: HealthComponent(100.0),
         tag: EnemyTag,
         movable: Movable {
-            max_speed: 14.0,
+            max_speed: 7.0,
             max_acceleration: 20.0,
             ..Default::default()
         },
@@ -84,7 +84,21 @@ fn execute_ai(
                         Vec3::new(target.x, enemy_transform.translation.y, target.z);
                     enemy_transform.look_at(look_at_target, Vec3::Y);
 
-                    // movable.acceleration = 10.0;
+                    let distance = enemy_transform
+                        .translation
+                        .distance(player_transform.translation);
+
+                    if distance > 7.0 {
+                        if distance > 18.0 {
+                            movable.acceleration = 10.0;
+                            movable.fast = false;
+                        } else {
+                            movable.fast = true;
+                            movable.acceleration = 15.0;
+                        }
+                    } else {
+                        movable.acceleration = -(movable.speed);
+                    }
                 }
                 AiType::NONE => {}
             }

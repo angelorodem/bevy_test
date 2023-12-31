@@ -1,10 +1,11 @@
-use bevy::prelude::*;
+use bevy::{asset::LoadState, gltf::Gltf, prelude::*};
 
-use crate::character::NameComponent;
+use crate::{character::NameComponent, states::GameState};
 
 #[derive(Resource, Debug, Default)]
 pub struct PlayerSceneAssets {
     pub player: Handle<Scene>,
+    pub player_glb: Handle<Gltf>,
     pub player_death_animation: Handle<AnimationClip>,
     pub player_run_animation: Handle<AnimationClip>,
     pub player_walk_animation: Handle<AnimationClip>,
@@ -34,8 +35,26 @@ impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerSceneAssets>()
             .init_resource::<SkeletonSceneAssets>()
-            .add_systems(Startup, (load_player_assets, load_skeleton_assets))
-            .add_systems(Update, link_animators);
+            .add_systems(PreStartup, (load_player_assets, load_skeleton_assets))
+            .add_systems(Update, link_animators)
+            .add_systems(
+                Update,
+                check_loading_status.run_if(in_state(GameState::Loading)),
+            );
+    }
+}
+
+fn check_loading_status(
+    mut game_state: ResMut<NextState<GameState>>,
+    player_assets: ResMut<PlayerSceneAssets>,
+    asset_server: Res<AssetServer>,
+    mut skeleton_assets: ResMut<SkeletonSceneAssets>,
+) {
+    if asset_server.is_loaded_with_dependencies(&player_assets.player_glb) {
+        println!("Loaded, Start game");
+        game_state.set(GameState::Playing);
+    } else {
+        println!("Loading");
     }
 }
 
@@ -64,6 +83,7 @@ fn link_animators(
 fn load_player_assets(mut scene_assets: ResMut<PlayerSceneAssets>, asset_server: Res<AssetServer>) {
     *scene_assets = PlayerSceneAssets {
         player: asset_server.load("Steve.glb#Scene0"),
+        player_glb: asset_server.load("Steve.glb"),
         player_death_animation: asset_server.load("Steve.glb#Animation0"),
         player_run_animation: asset_server.load("Steve.glb#Animation12"),
         player_walk_animation: asset_server.load("Steve.glb#Animation14"),
@@ -74,7 +94,7 @@ fn load_player_assets(mut scene_assets: ResMut<PlayerSceneAssets>, asset_server:
             asset_server.load("Steve.glb#Animation5"),
         ],
         chess_texture: asset_server.load("chess.jpg"),
-    }
+    };
 }
 
 fn load_skeleton_assets(

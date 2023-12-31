@@ -4,6 +4,7 @@ mod character;
 mod enemy;
 mod movable;
 mod player;
+mod states;
 
 use std::time::Duration;
 
@@ -22,23 +23,18 @@ use camera::CameraPlugin;
 use enemy::EnemyPlugin;
 use movable::MovablePlugin;
 use player::PlayerPlugin;
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
-enum GameState {
-    #[default]
-    Playing,
-    GameOver,
-}
+use states::GameState;
 
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
+        .add_state::<GameState>()
         .insert_resource(Msaa::Off)
         .insert_resource(ClearColor(Color::rgb(0.1, 0.0, 0.15)))
         .insert_resource(AmbientLight {
             color: Color::default(),
             brightness: 0.75,
         })
-        .add_plugins(DefaultPlugins)
         .add_plugins(EditorPlugin::default())
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
@@ -48,7 +44,7 @@ fn main() {
         .add_plugins(AssetLoaderPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(PlayerPlugin)
-        // .add_plugins(EnemyPlugin)
+        .add_plugins(EnemyPlugin)
         .add_plugins(MovablePlugin)
         .add_systems(Startup, setup_physics)
         .run();
