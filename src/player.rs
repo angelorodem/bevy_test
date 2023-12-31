@@ -1,9 +1,16 @@
 use std::time::Duration;
 
 use crate::asset_loader::PlayerSceneAssets;
-use crate::character::{HealthComponent, NameComponent};
+use crate::character::{CharacterRigidBodyBundle, HealthComponent, NameComponent};
 use crate::movable::{AnimatedCharacterMovable, Movable};
 use bevy::prelude::*;
+
+use bevy_rapier3d::dynamics::Velocity;
+use bevy_rapier3d::geometry::Friction;
+use bevy_rapier3d::{
+    dynamics::{LockedAxes, RigidBody, Sleeping},
+    geometry::{Collider, ColliderMassProperties},
+};
 
 #[derive(Component)]
 pub struct PlayerTag;
@@ -77,7 +84,7 @@ fn spawn_player(
         model: SceneBundle {
             scene: asset_server.player.clone(),
             transform: Transform::from_translation(Vec3 {
-                x: -1.0,
+                x: 0.0,
                 y: 0.0,
                 z: 0.0,
             }),
@@ -105,15 +112,24 @@ fn spawn_player(
     //     material: materials.add(.into()),
     //     ..default()
     // });
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(100.0).into()),
-        material: materials.add(StandardMaterial {
-            base_color: Color::rgb(0.3, 0.5, 0.3),
-            perceptual_roughness: 0.08,
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(shape::Plane::from_size(100.0).into()),
+            material: materials.add(StandardMaterial {
+                base_color_texture: Some(asset_server.chess_texture.clone()),
+                alpha_mode: AlphaMode::Blend,
+                perceptual_roughness: 0.08,
+                ..default()
+            }),
             ..default()
-        }),
-        ..default()
-    });
+        })
+        .insert((
+            Collider::cuboid(50.0, 0.1, 50.0),
+            Friction {
+                coefficient: 2.0,
+                combine_rule: bevy_rapier3d::dynamics::CoefficientCombineRule::Max,
+            },
+        ));
 }
 
 fn move_player(

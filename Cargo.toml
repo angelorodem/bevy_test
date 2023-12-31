@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy = { version = "0.12.1", features = ["dynamic_linking", "jpeg"] }
 bevy_tweening = "0.9"
-bevy_rapier3d = { version = "*", features = [ "simd-stable", "debug-render-3d" ] }
+bevy_rapier3d = { version = "*", features = [ "simd-stable", "debug-render-3d", "parallel" ] }
 bevy_editor_pls = "0.7.0"
+oxidized_navigation = { version = "0.8", features = ["rapier"] }
 
 [workspace]
 resolver = "2" # Important! wgpu/Bevy needs this!

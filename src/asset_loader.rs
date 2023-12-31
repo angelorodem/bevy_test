@@ -10,6 +10,7 @@ pub struct PlayerSceneAssets {
     pub player_walk_animation: Handle<AnimationClip>,
     pub player_take_damage_animation: Handle<AnimationClip>,
     pub player_idle_animations: Vec<Handle<AnimationClip>>,
+    pub chess_texture: Handle<Image>,
 }
 
 #[derive(Resource, Debug, Default)]
@@ -72,6 +73,7 @@ fn load_player_assets(mut scene_assets: ResMut<PlayerSceneAssets>, asset_server:
             asset_server.load("Steve.glb#Animation3"),
             asset_server.load("Steve.glb#Animation5"),
         ],
+        chess_texture: asset_server.load("chess.jpg"),
     }
 }
 
