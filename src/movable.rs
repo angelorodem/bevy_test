@@ -4,8 +4,15 @@ use bevy::prelude::*;
 use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
 use crate::{
-    asset_loader::AnimationEntityLink, enemy::EnemyTag, player::PlayerTag, states::GameState,
+    asset_loader::AnimationEntityLink, debug::PlayerSpeedHistory, enemy::EnemyTag,
+    player::PlayerTag, states::GameState,
 };
+
+#[derive(Bundle)]
+pub struct MovableBundle {
+    pub movable: Movable,
+    pub movable_animation: AnimatedCharacterMovable,
+}
 
 #[derive(Component, Default)]
 pub struct Movable {
@@ -14,9 +21,10 @@ pub struct Movable {
     pub speed: f32,
     pub max_speed: f32,
     pub fast: bool,
+    pub falling_time: f32,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Default)]
 pub struct AnimatedCharacterMovable {
     pub run_animation: Handle<AnimationClip>,
     pub walk_animation: Handle<AnimationClip>,
@@ -44,11 +52,18 @@ fn move_movables_player(
         ),
         With<PlayerTag>,
     >,
+    mut player_history: Option<ResMut<PlayerSpeedHistory>>,
     time: Res<Time>,
 ) {
     for (movable_tranform, mut controller, controller_output, mut movable_data) in
         movables.iter_mut()
     {
+        let mut move_vector = if !controller_output.grounded {
+            Vec3::new(0.0, -10.0, 0.0) * time.delta_seconds()
+        } else {
+            Vec3::ZERO
+        };
+
         if movable_data.fast {
             movable_data.speed = (movable_data.speed
                 + (movable_data.acceleration * time.delta_seconds()))
@@ -62,15 +77,18 @@ fn move_movables_player(
         if movable_data.speed < 1.0 && movable_data.acceleration.abs() < 9.0 {
             movable_data.speed = 0.0;
             movable_data.acceleration = 0.0;
+            if move_vector.length() > 0.001 {
+                controller.translation = Some(move_vector);
+            }
         } else {
             let forward = -movable_tranform.forward();
-            let mut move_vector = forward * movable_data.speed * time.delta_seconds();
-
-            //movable_tranform.translation += move_vector;
-            if !controller_output.grounded {
-                move_vector += Vec3::new(0.0, -10.0, 0.0) * time.delta_seconds();
-            }
+            move_vector += forward * movable_data.speed * time.delta_seconds();
             controller.translation = Some(move_vector);
+        }
+
+        if let Some(player_history) = player_history.as_mut() {
+            let speed = controller_output.effective_translation.length();
+            player_history.log(speed, time.delta_seconds());
         }
     }
 }
@@ -90,19 +108,12 @@ fn move_movables_enemy(
             .clamp(-movable_data.max_speed / 2.0, movable_data.max_speed / 2.0);
         }
 
-        println!(
-            "Enemy speed: {}, Enemy Acceleration: {}",
-            movable_data.speed, movable_data.acceleration
-        );
         if movable_data.speed < 1.0 && movable_data.acceleration.abs() < 9.0 {
             movable_data.speed = 0.0;
             movable_data.acceleration = 0.0;
-            println!("Enemy stopped")
         } else {
             let forward = -movable_tranform.forward();
             let move_vector = forward * movable_data.speed * time.delta_seconds();
-
-            println!("Move vector: {:?}", move_vector);
             movable_tranform.translation += move_vector;
         }
     }

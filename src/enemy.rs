@@ -1,37 +1,55 @@
 use bevy::prelude::*;
 use bevy_rapier3d::{
-    dynamics::{LockedAxes, RigidBody, Sleeping, Velocity},
+    dynamics::{Damping, LockedAxes, RigidBody, Sleeping, Velocity},
     geometry::{Collider, ColliderMassProperties, Friction},
 };
 
 use crate::{
-    asset_loader::SkeletonSceneAssets,
-    character::{HealthComponent, NameComponent},
+    asset_loader::{EnemySceneAssets, SkeletonSceneAssets},
+    character::{CharacterPhysicBody, HealthComponent, NameComponent},
     movable::{AnimatedCharacterMovable, Movable},
     player::PlayerTag,
+    states::GameState,
 };
 
 pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, spawn_enemy)
-            .add_systems(Update, execute_ai);
+        app.init_resource::<Enemies>()
+            .add_systems(
+                OnEnter(GameState::Playing),
+                (load_skeleton_type, load_demon_type, spawn_enemies).chain(),
+            )
+            .add_systems(Update, execute_ai.run_if(in_state(GameState::Playing)));
     }
 }
 
 #[derive(Component)]
 pub struct EnemyTag;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, Copy)]
 pub enum AiType {
     #[default]
     FOLLOW,
     NONE,
 }
 
+#[derive(Default)]
+pub struct EnemyTypeBase {
+    pub animation: AnimatedCharacterMovable,
+    pub scene: Handle<Scene>,
+    pub ai_type: AiType,
+}
+
+#[derive(Resource, Default)]
+pub struct Enemies {
+    pub skeleton: EnemyTypeBase,
+    pub demon: EnemyTypeBase,
+}
+
 #[derive(Bundle)]
-pub struct EnemyBundle {
+pub struct EnemySpawnBundle {
     pub model: SceneBundle,
     pub name: NameComponent,
     pub health: HealthComponent,
@@ -39,34 +57,84 @@ pub struct EnemyBundle {
     pub movable: Movable,
     pub movable_animation: AnimatedCharacterMovable,
     pub ai_type: AiType,
+    pub rigid_body: CharacterPhysicBody,
 }
 
-fn spawn_enemy(mut commands: Commands, asset_server: ResMut<SkeletonSceneAssets>) {
-    commands.spawn(EnemyBundle {
-        model: SceneBundle {
-            scene: asset_server.skeleton.clone(),
-            transform: Transform::from_translation(Vec3 {
-                x: 4.,
-                y: 0.0,
-                z: 4.,
-            }),
-            ..Default::default()
-        },
-        name: NameComponent("Evil boy".to_string()),
-        health: HealthComponent(100.0),
-        tag: EnemyTag,
-        movable: Movable {
-            max_speed: 7.0,
-            max_acceleration: 20.0,
-            ..Default::default()
-        },
-        movable_animation: AnimatedCharacterMovable {
-            run_animation: asset_server.skeleton_run_animation.clone(),
-            walk_animation: asset_server.skeleton_walk_animation.clone(),
-            idle_animations: asset_server.skeleton_idle_animations.clone(),
-        },
-        ai_type: AiType::FOLLOW,
-    });
+fn load_skeleton_type(mut enemies: ResMut<Enemies>, asset_server: ResMut<EnemySceneAssets>) {
+    enemies.skeleton.animation = AnimatedCharacterMovable {
+        run_animation: asset_server.skeleton.skeleton_run_animation.clone(),
+        walk_animation: asset_server.skeleton.skeleton_walk_animation.clone(),
+        idle_animations: asset_server.skeleton.skeleton_idle_animations.clone(),
+    };
+    enemies.skeleton.scene = asset_server.skeleton.skeleton.clone();
+    enemies.skeleton.ai_type = AiType::FOLLOW;
+}
+
+fn load_demon_type(mut enemies: ResMut<Enemies>, asset_server: ResMut<EnemySceneAssets>) {
+    enemies.demon.animation = AnimatedCharacterMovable {
+        run_animation: asset_server.demon.demon_run_animation.clone(),
+        walk_animation: asset_server.demon.demon_walk_animation.clone(),
+        idle_animations: asset_server.demon.demon_idle_animations.clone(),
+    };
+    enemies.demon.scene = asset_server.demon.demon.clone();
+    enemies.demon.ai_type = AiType::FOLLOW;
+}
+
+fn spawn_enemies(mut commands: Commands, enemies: Res<Enemies>) {
+    for i in 0..5 {
+        for j in 0..5 {
+            spawn_enemy(
+                Vec3 {
+                    x: i as f32,
+                    y: 0.0,
+                    z: j as f32,
+                },
+                &mut commands,
+                &enemies.demon,
+            );
+        }
+    }
+}
+
+fn spawn_enemy(position: Vec3, commands: &mut Commands, enemy: &EnemyTypeBase) {
+    commands
+        .spawn(EnemySpawnBundle {
+            model: SceneBundle {
+                scene: enemy.scene.clone(),
+                transform: Transform::from_translation(position),
+                ..Default::default()
+            },
+            name: NameComponent("Evil boy".to_string()),
+            health: HealthComponent(100.0),
+            tag: EnemyTag,
+            movable: Movable {
+                max_speed: 7.0,
+                max_acceleration: 20.0,
+                ..Default::default()
+            },
+            movable_animation: enemy.animation.clone(),
+            ai_type: enemy.ai_type.clone(),
+            rigid_body: CharacterPhysicBody {
+                rigid_body: RigidBody::Dynamic,
+                damping: Damping {
+                    linear_damping: 0.5,
+                    angular_damping: 1.0,
+                },
+                friction: Friction {
+                    coefficient: 1.0,
+                    combine_rule: bevy_rapier3d::dynamics::CoefficientCombineRule::Average,
+                },
+                locked_axes: LockedAxes::ROTATION_LOCKED,
+            },
+        })
+        .with_children(|child| {
+            child
+                .spawn(Collider::capsule_y(0.7, 0.6))
+                .insert(TransformBundle::from_transform(Transform::from_xyz(
+                    0.0, 1.4, 0.0,
+                )))
+                .insert(ColliderMassProperties::Density(10.0));
+        });
 }
 
 fn execute_ai(

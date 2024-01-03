@@ -11,10 +11,9 @@ pub struct PlayerSceneAssets {
     pub player_walk_animation: Handle<AnimationClip>,
     pub player_take_damage_animation: Handle<AnimationClip>,
     pub player_idle_animations: Vec<Handle<AnimationClip>>,
-    pub chess_texture: Handle<Image>,
 }
 
-#[derive(Resource, Debug, Default)]
+#[derive(Default)]
 pub struct SkeletonSceneAssets {
     pub skeleton: Handle<Scene>,
     pub skeleton_attack_animation: Handle<AnimationClip>,
@@ -23,6 +22,28 @@ pub struct SkeletonSceneAssets {
     pub skeleton_walk_animation: Handle<AnimationClip>,
     pub skeleton_take_damage_animation: Handle<AnimationClip>,
     pub skeleton_idle_animations: Vec<Handle<AnimationClip>>,
+}
+
+#[derive(Default)]
+pub struct DemonSceneAssets {
+    pub demon: Handle<Scene>,
+    pub demon_attack_animation: Handle<AnimationClip>,
+    pub demon_death_animation: Handle<AnimationClip>,
+    pub demon_run_animation: Handle<AnimationClip>,
+    pub demon_walk_animation: Handle<AnimationClip>,
+    pub demon_take_damage_animation: Handle<AnimationClip>,
+    pub demon_idle_animations: Vec<Handle<AnimationClip>>,
+}
+
+#[derive(Resource, Default)]
+pub struct EnemySceneAssets {
+    pub skeleton: SkeletonSceneAssets,
+    pub demon: DemonSceneAssets,
+}
+
+#[derive(Resource, Default)]
+pub struct EnvironmentAssets {
+    pub chess_texture: Handle<Image>,
 }
 
 // Animation Entity link to link entity root to animation player
@@ -34,8 +55,17 @@ pub struct AssetLoaderPlugin;
 impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerSceneAssets>()
-            .init_resource::<SkeletonSceneAssets>()
-            .add_systems(PreStartup, (load_player_assets, load_skeleton_assets))
+            .init_resource::<EnemySceneAssets>()
+            .init_resource::<EnvironmentAssets>()
+            .add_systems(
+                PreStartup,
+                (
+                    load_player_assets,
+                    load_skeleton_assets,
+                    load_deamon_assets,
+                    load_environment_assets,
+                ),
+            )
             .add_systems(Update, link_animators)
             .add_systems(
                 Update,
@@ -48,7 +78,6 @@ fn check_loading_status(
     mut game_state: ResMut<NextState<GameState>>,
     player_assets: ResMut<PlayerSceneAssets>,
     asset_server: Res<AssetServer>,
-    mut skeleton_assets: ResMut<SkeletonSceneAssets>,
 ) {
     if asset_server.is_loaded_with_dependencies(&player_assets.player_glb) {
         println!("Loaded, Start game");
@@ -80,6 +109,13 @@ fn link_animators(
     }
 }
 
+fn load_environment_assets(
+    mut environment_assets: ResMut<EnvironmentAssets>,
+    asset_server: Res<AssetServer>,
+) {
+    environment_assets.chess_texture = asset_server.load("chess.jpg");
+}
+
 fn load_player_assets(mut scene_assets: ResMut<PlayerSceneAssets>, asset_server: Res<AssetServer>) {
     *scene_assets = PlayerSceneAssets {
         player: asset_server.load("Steve.glb#Scene0"),
@@ -93,16 +129,15 @@ fn load_player_assets(mut scene_assets: ResMut<PlayerSceneAssets>, asset_server:
             asset_server.load("Steve.glb#Animation3"),
             asset_server.load("Steve.glb#Animation5"),
         ],
-        chess_texture: asset_server.load("chess.jpg"),
     };
 }
 
 fn load_skeleton_assets(
-    mut scene_assets: ResMut<SkeletonSceneAssets>,
+    mut scene_assets: ResMut<EnemySceneAssets>,
     asset_server: Res<AssetServer>,
 ) {
     println!("Loading skeleton assets");
-    *scene_assets = SkeletonSceneAssets {
+    scene_assets.skeleton = SkeletonSceneAssets {
         skeleton: asset_server.load("Skeleton.glb#Scene0"),
         skeleton_attack_animation: asset_server.load("Skeleton.glb#Animation0"),
         skeleton_death_animation: asset_server.load("Skeleton.glb#Animation1"),
@@ -110,5 +145,18 @@ fn load_skeleton_assets(
         skeleton_walk_animation: asset_server.load("Skeleton.glb#Animation6"),
         skeleton_take_damage_animation: asset_server.load("Skeleton.glb#Animation2"),
         skeleton_idle_animations: vec![asset_server.load("Skeleton.glb#Animation3")],
+    }
+}
+
+fn load_deamon_assets(mut scene_assets: ResMut<EnemySceneAssets>, asset_server: Res<AssetServer>) {
+    println!("Loading demon assets");
+    scene_assets.demon = DemonSceneAssets {
+        demon: asset_server.load("Demon.glb#Scene0"),
+        demon_attack_animation: asset_server.load("Demon.glb#Animation0"),
+        demon_death_animation: asset_server.load("Demon.glb#Animation1"),
+        demon_run_animation: asset_server.load("Demon.glb#Animation5"),
+        demon_walk_animation: asset_server.load("Demon.glb#Animation6"),
+        demon_take_damage_animation: asset_server.load("Demon.glb#Animation2"),
+        demon_idle_animations: vec![asset_server.load("Demon.glb#Animation3")],
     }
 }

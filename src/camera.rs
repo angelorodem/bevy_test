@@ -14,6 +14,9 @@ const CAMERA_DISTANCE: f32 = 20.0;
 const CAMERA_HEIGHT: f32 = 5.0;
 const CAMERA_OFFSET: Vec3 = Vec3::new(CAMERA_DISTANCE, CAMERA_HEIGHT, CAMERA_DISTANCE);
 
+#[derive(Component)]
+pub struct PlayerCameraTag;
+
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
@@ -34,6 +37,7 @@ fn spawn_camera(mut commands: Commands) {
             tonemapping: Tonemapping::TonyMcMapface,
             ..Default::default()
         })
+        .insert(PlayerCameraTag)
         .insert(BloomSettings::NATURAL)
         .insert(ScreenSpaceAmbientOcclusionBundle::default())
         .insert(TemporalAntiAliasBundle::default())
@@ -44,7 +48,7 @@ fn spawn_camera(mut commands: Commands) {
 
 fn player_camera(
     player: Query<&Transform, (With<PlayerTag>, Without<Camera3d>)>,
-    mut camera: Query<&mut Transform, (With<Camera3d>, Without<PlayerTag>)>,
+    mut camera: Query<&mut Transform, (With<Camera3d>, With<PlayerCameraTag>, Without<PlayerTag>)>,
     time: Res<Time>,
 ) {
     for player_transform in player.iter() {
