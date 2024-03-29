@@ -1,30 +1,33 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "ghcr.io/devcontainers/features/rust:1": {}
-  },
-  "hostRequirements": {
-    "cpus": 4
-  },
-  "waitFor": "onCreateCommand",
-  "updateContentCommand": "cargo build",
-  "postCreateCommand": "",
-  "postAttachCommand": {
-    "server": "cargo run"
-  },
-  "portsAttributes": {
-    "8888": {
-      "label": "Application",
-      "onAutoForward": "openPreview"
-    }
-  },
-  "customizations": {
-    "codespaces": {
-      "openFiles": [
-        "src/main.rs",
-        "templates/index.html"
-      ]
+    "build": {
+        "dockerfile": "./Dockerfile",
+        "context": "."
     },
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": "true",
+            "username": "vscode",
+            "userUid": "1000",
+            "userGid": "1000",
+            "upgradePackages": "true"
+        },
+        "ghcr.io/devcontainers/features/rust:1": "latest",
+	"ghcr.io/devcontainers/features/git:1": {
+            "version": "latest",
+            "ppa": "false"
+        }
+    },
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "rustc --version",
+
+	// Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode",
+
+
     "vscode": {
       "extensions": [
 		"mutantdino.resourcemonitor",
@@ -34,7 +37,5 @@
         "tamasfe.even-better-toml",
         "usernamehw.errorlens"
       ]
-    }
-  },
-  "forwardPorts": [8888]
+  }
 }
