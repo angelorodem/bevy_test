@@ -7,5 +7,5 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get purge -y imagemagick imagemagick-6-common
 
 # [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+     && apt-get -y install --no-install-recommends libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
